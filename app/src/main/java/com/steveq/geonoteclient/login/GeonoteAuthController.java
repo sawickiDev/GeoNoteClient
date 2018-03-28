@@ -24,7 +24,7 @@ public class GeonoteAuthController{
         this.callback = callback;
     }
 
-    public void start(){
+    public void start(String username, String password){
         Gson gson =
                 new GsonBuilder()
                     .setLenient()
@@ -43,8 +43,8 @@ public class GeonoteAuthController{
                 geonoteAuthAPI.authRequest(
                         Credentials.basic("android_app", "android"),
                         "password",
-                        "adamek123",
-                        "adamek"
+                        username,
+                        password
                 );
         Log.d(TAG, String.valueOf(call.request().url()));
         Log.d(TAG, String.valueOf(call.request().body()));

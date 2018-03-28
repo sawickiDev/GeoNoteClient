@@ -20,4 +20,7 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="welcome_string">Welcome to</string>
+    <string name="geo_note">Geo-Note</string>
+    <string name="title_activity_maps">Map</string>
 </resources>

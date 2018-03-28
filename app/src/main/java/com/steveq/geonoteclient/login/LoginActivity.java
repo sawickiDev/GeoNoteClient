@@ -1,9 +1,12 @@
 package com.steveq.geonoteclient.login;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -17,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.steveq.geonoteclient.R;
+import com.steveq.geonoteclient.map.MapsActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
 
 import java.io.IOException;
@@ -42,11 +46,17 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
     @BindView(R.id.credentialsErrorTextView)
     TextView credentialErrorTextView;
 
-    @BindView(R.id.username)
-    TextView usernameTextView;
+    @BindView(R.id.usernameTextInputLayout)
+    TextInputLayout usernameTextInputLayout;
 
-    @BindView(R.id.password)
-    EditText passwordEditText;
+    @BindView(R.id.usernameEditText)
+    TextInputEditText usernameEditText;
+
+    @BindView(R.id.passwordTextInputLayout)
+    TextInputLayout passwordTextInputLayout;
+
+    @BindView(R.id.passwordEditText)
+    TextInputEditText passwordEditText;
 
     @BindView(R.id.login_progress)
     View progressView;
@@ -89,13 +99,11 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             return;
         }
 
-        //Reset errors
-        usernameTextView.setError(null);
+        usernameEditText.setError(null);
         passwordEditText.setError(null);
         credentialErrorTextView.setVisibility(View.GONE);
 
-        //Store values at the time of the login attempt.
-        String username = usernameTextView.getText().toString();
+        String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
 
         boolean cancel = false;
@@ -107,14 +115,13 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             cancel = true;
         }
 
-        // Check for a valid email address.
         if (TextUtils.isEmpty(username)) {
-            usernameTextView.setError(getString(R.string.error_field_required));
-            focusView = usernameTextView;
+            usernameEditText.setError(getString(R.string.error_field_required));
+            focusView = usernameEditText;
             cancel = true;
         } else if (!isUsernameValid(username)) {
-            usernameTextView.setError(getString(R.string.error_invalid_email));
-            focusView = usernameTextView;
+            usernameEditText.setError(getString(R.string.error_invalid_email));
+            focusView = usernameEditText;
             cancel = true;
         }
 
@@ -122,7 +129,7 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             focusView.requestFocus();
         } else {
             showProgress(true);
-            geonoteAuthController.start();
+            geonoteAuthController.start(username, password);
         }
     }
 
@@ -142,7 +149,6 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
 
     private void showProgress(final boolean show) {
         progressView.setVisibility(show ? View.VISIBLE : View.GONE);
-        loginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -150,12 +156,13 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         showProgress(false);
         if(response.isSuccessful()){
             Log.d(TAG, String.valueOf(response.body()));
-            finish();
+            Intent intent = new Intent(this, MapsActivity.class);
+            startActivity(intent);
         } else {
             AuthError ae = parseAuthError(response.errorBody());
             if("Bad credentials".equals(ae.getErrorDescription())){
-                credentialErrorTextView.setText(getResources().getString(R.string.error_invalid_credentials));
-                credentialErrorTextView.setVisibility(View.VISIBLE);
+                passwordTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
+                usernameTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
             }
         }
     }
@@ -167,7 +174,7 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             ae = gson.fromJson(errorResponse.string(), AuthError.class);
         } catch (IOException | NullPointerException e) {
             Snackbar
-                    .make(loginFormView, getResources().getString(R.string.incorrect_response), Snackbar.LENGTH_SHORT)
+                    .make(loginFormView, getResources().getString(R.string.incorrect_response), Snackbar.LENGTH_LONG)
                     .show();
             e.printStackTrace();
         }
