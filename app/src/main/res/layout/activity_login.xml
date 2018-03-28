@@ -30,6 +30,19 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/credentialsErrorTextView"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="4dp"
+                android:textAppearance="?android:textAppearanceMedium"
+                android:textAlignment="center"
+                android:background="@color/errorColor"
+                android:textColor="@color/errorTextColor"
+                tools:text="Invalid Credentials"/>
+
             <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
@@ -69,7 +82,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="@string/action_sign_in"
+                android:text="@string/action_sign_in_short"
+                android:textStyle="bold"
+                android:textAllCaps="false"/>
+
+            <TextView
+                android:id="@+id/registerTextView"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/action_register"
+                android:layout_gravity="center_horizontal"
+                android:textAlignment="center"
                 android:textStyle="bold" />
 
         </LinearLayout>

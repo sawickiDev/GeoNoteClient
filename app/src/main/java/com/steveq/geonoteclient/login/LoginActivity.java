@@ -13,14 +13,21 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
 import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.services.PermissionChecker;
 
+import java.io.IOException;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class LoginActivity extends AppCompatActivity implements Callback<AuthResponse> {
     private static final String TAG = LoginActivity.class.getSimpleName();
@@ -31,6 +38,9 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
                             "android.permission.INTERNET",
                             "android.permission.ACCESS_NETWORK_STATE"
             };
+
+    @BindView(R.id.credentialsErrorTextView)
+    TextView credentialErrorTextView;
 
     @BindView(R.id.username)
     TextView usernameTextView;
@@ -46,6 +56,9 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
 
     @BindView(R.id.username_sign_in_button)
     Button signInButton;
+
+    @BindView(R.id.registerTextView)
+    TextView registerTextView;
 
     private GeonoteAuthController geonoteAuthController;
     private PermissionChecker permissionChecker;
@@ -65,6 +78,7 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         }));
 
         signInButton.setOnClickListener(view -> attemptLogin());
+        registerTextView.setOnClickListener(view -> attemptRegister());
         geonoteAuthController = new GeonoteAuthController(this);
         permissionChecker = new PermissionChecker(this);
         permissionChecker.handlePermission(NEEDED_PERMISSIONS, INTERNET_REQUEST);
@@ -78,9 +92,10 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         //Reset errors
         usernameTextView.setError(null);
         passwordEditText.setError(null);
+        credentialErrorTextView.setVisibility(View.GONE);
 
         //Store values at the time of the login attempt.
-        String email = usernameTextView.getText().toString();
+        String username = usernameTextView.getText().toString();
         String password = passwordEditText.getText().toString();
 
         boolean cancel = false;
@@ -93,11 +108,11 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         }
 
         // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
+        if (TextUtils.isEmpty(username)) {
             usernameTextView.setError(getString(R.string.error_field_required));
             focusView = usernameTextView;
             cancel = true;
-        } else if (!isEmailValid(email)) {
+        } else if (!isUsernameValid(username)) {
             usernameTextView.setError(getString(R.string.error_invalid_email));
             focusView = usernameTextView;
             cancel = true;
@@ -111,9 +126,13 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         }
     }
 
-    private boolean isEmailValid(String email) {
+    private void attemptRegister(){
+        //TODO: implement register
+    }
+
+    private boolean isUsernameValid(String username) {
         //can be customized
-        return email.contains("@");
+        return username.length() > 4;
     }
 
     private boolean isPasswordValid(String password) {
@@ -133,16 +152,36 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             Log.d(TAG, String.valueOf(response.body()));
             finish();
         } else {
-            Log.d(TAG, String.valueOf(response.errorBody()));
-            passwordEditText.setError(getString(R.string.error_incorrect_password));
-            passwordEditText.requestFocus();
+            AuthError ae = parseAuthError(response.errorBody());
+            if("Bad credentials".equals(ae.getErrorDescription())){
+                credentialErrorTextView.setText(getResources().getString(R.string.error_invalid_credentials));
+                credentialErrorTextView.setVisibility(View.VISIBLE);
+            }
         }
+    }
+
+    private AuthError parseAuthError(ResponseBody errorResponse){
+        Gson gson = new Gson();
+        AuthError ae = new AuthError();
+        try {
+            ae = gson.fromJson(errorResponse.string(), AuthError.class);
+        } catch (IOException | NullPointerException e) {
+            Snackbar
+                    .make(loginFormView, getResources().getString(R.string.incorrect_response), Snackbar.LENGTH_SHORT)
+                    .show();
+            e.printStackTrace();
+        }
+
+        return ae;
     }
 
     @Override
     public void onFailure(Call<AuthResponse> call, Throwable t) {
         Log.d(TAG, t.getMessage());
         showProgress(false);
+        Snackbar
+            .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
+            .show();
 
     }
 

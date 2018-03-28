@@ -6,12 +6,16 @@
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
     <string name="prompt_username">Username</string>
-    <string name="prompt_password">Password (optional)</string>
+    <string name="prompt_password">Password</string>
+    <string name="connection_error">There was connection error during login</string>
+    <string name="incorrect_response">Incorrect server response - contact admin</string>
     <string name="action_sign_in">Sign in or register</string>
-    <string name="action_sign_in_short">Sign in</string>
+    <string name="action_register">Register if not a member</string>
+    <string name="action_sign_in_short">Log in</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_invalid_credentials">Invalid credentials</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."

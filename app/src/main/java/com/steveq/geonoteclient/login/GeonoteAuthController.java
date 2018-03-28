@@ -43,7 +43,7 @@ public class GeonoteAuthController{
                 geonoteAuthAPI.authRequest(
                         Credentials.basic("android_app", "android"),
                         "password",
-                        "adamek",
+                        "adamek123",
                         "adamek"
                 );
         Log.d(TAG, String.valueOf(call.request().url()));
