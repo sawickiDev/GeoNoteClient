@@ -1,22 +1,22 @@
 package com.steveq.geonoteclient.login;
 
 public class RegisterData {
-    private String username;
+    private String name;
     private String password;
 
     public RegisterData(){}
 
-    public RegisterData(String username, String password) {
-        this.username = username;
+    public RegisterData(String name, String password) {
+        this.name = name;
         this.password = password;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return name;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPassword() {
@@ -30,7 +30,7 @@ public class RegisterData {
     @Override
     public String toString() {
         return "RegisterData{" +
-                "username='" + username + '\'' +
+                "name='" + name + '\'' +
                 ", password='" + password + '\'' +
                 '}';
     }

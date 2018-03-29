@@ -5,7 +5,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
     android:background="@drawable/login_img"
     tools:context="com.steveq.geonoteclient.login.LoginActivity">
 
@@ -26,6 +25,7 @@
                 android:background="@drawable/layout_bg"
                 android:paddingVertical="12dp"
                 android:paddingHorizontal="16dp"
+                android:layout_marginHorizontal="16dp"
                 android:orientation="vertical">
 
                 <TextView

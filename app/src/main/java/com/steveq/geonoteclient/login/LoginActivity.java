@@ -13,12 +13,9 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
 import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.map.MapsActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
@@ -31,9 +28,8 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.converter.gson.GsonConverterFactory;
 
-public class LoginActivity extends AppCompatActivity implements Callback<AuthResponse> {
+public class LoginActivity extends AppCompatActivity {
     private static final String TAG = LoginActivity.class.getSimpleName();
 
     private static final int INTERNET_REQUEST = 10;
@@ -89,7 +85,7 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
 
         signInButton.setOnClickListener(view -> attemptLogin());
         registerTextView.setOnClickListener(view -> attemptRegister());
-        geonoteAuthController = new GeonoteAuthController(this);
+        geonoteAuthController = new GeonoteAuthController();
         permissionChecker = new PermissionChecker(this);
         permissionChecker.handlePermission(NEEDED_PERMISSIONS, INTERNET_REQUEST);
     }
@@ -129,12 +125,75 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
             focusView.requestFocus();
         } else {
             showProgress(true);
-            geonoteAuthController.start(username, password);
+            geonoteAuthController
+                    .prepareLoginCall(username, password)
+                    .enqueue(new Callback<AuthResponse>() {
+                        @Override
+                        public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+                            showProgress(false);
+                            if(response.isSuccessful()){
+                                Log.d(TAG, String.valueOf(response.body()));
+                                Intent intent =
+                                        new Intent(LoginActivity.this, MapsActivity.class);
+                                startActivity(intent);
+                            } else {
+                                AuthError ae = parseAuthError(response.errorBody());
+                                if("Bad credentials".equals(ae.getErrorDescription())){
+                                    passwordTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
+                                    usernameTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<AuthResponse> call, Throwable t) {
+                            Log.d(TAG, t.getMessage());
+                            showProgress(false);
+                            Snackbar
+                                .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
+                                .show();
+                        }
+                    });
         }
     }
 
     private void attemptRegister(){
-        //TODO: implement register
+
+        String username = usernameEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+
+        showProgress(true);
+        geonoteAuthController
+            .prepareRegisterCall(new RegisterData(username, password))
+            .enqueue(new Callback<String>() {
+                @Override
+                public void onResponse(Call<String> call, Response<String> response) {
+                    showProgress(false);
+                    if(response.isSuccessful()){
+                        Log.d(TAG, String.valueOf(response.body()));
+                        if("OK".equals(response.body())){
+                            Snackbar
+                                    .make(loginFormView, getResources().getString(R.string.successfully_registered), Snackbar.LENGTH_SHORT)
+                                    .show();
+                            attemptLogin();
+                        } else if ("KO".equals(response.body())){
+                            Snackbar
+                                    .make(loginFormView, getResources().getString(R.string.user_exists), Snackbar.LENGTH_SHORT)
+                                    .show();
+                        }
+                    } else {
+                        Log.d(TAG, String.valueOf(response.body()));
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<String> call, Throwable t) {
+                    showProgress(false);
+                    Snackbar
+                        .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
+                        .show();
+                }
+            });
     }
 
     private boolean isUsernameValid(String username) {
@@ -151,22 +210,6 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         progressView.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
-    @Override
-    public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
-        showProgress(false);
-        if(response.isSuccessful()){
-            Log.d(TAG, String.valueOf(response.body()));
-            Intent intent = new Intent(this, MapsActivity.class);
-            startActivity(intent);
-        } else {
-            AuthError ae = parseAuthError(response.errorBody());
-            if("Bad credentials".equals(ae.getErrorDescription())){
-                passwordTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
-                usernameTextInputLayout.setError(getResources().getString(R.string.error_invalid_credentials));
-            }
-        }
-    }
-
     private AuthError parseAuthError(ResponseBody errorResponse){
         Gson gson = new Gson();
         AuthError ae = new AuthError();
@@ -180,16 +223,6 @@ public class LoginActivity extends AppCompatActivity implements Callback<AuthRes
         }
 
         return ae;
-    }
-
-    @Override
-    public void onFailure(Call<AuthResponse> call, Throwable t) {
-        Log.d(TAG, t.getMessage());
-        showProgress(false);
-        Snackbar
-            .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
-            .show();
-
     }
 
     @Override
