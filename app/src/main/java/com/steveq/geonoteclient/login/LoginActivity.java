@@ -68,12 +68,18 @@ public class LoginActivity extends AppCompatActivity {
 
     private GeonoteAuthController geonoteAuthController;
     private PermissionChecker permissionChecker;
+    private TokensPersistant tokensPersistant;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
+        tokensPersistant = new TokensPersistant(this);
+
+        if(tokensPersistant.hasAccessToken()){
+            redirectToMap();
+        }
 
         passwordEditText.setOnEditorActionListener(((textView, id, keyEvent) -> {
             if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
@@ -133,9 +139,10 @@ public class LoginActivity extends AppCompatActivity {
                             showProgress(false);
                             if(response.isSuccessful()){
                                 Log.d(TAG, String.valueOf(response.body()));
-                                Intent intent =
-                                        new Intent(LoginActivity.this, MapsActivity.class);
-                                startActivity(intent);
+                                AuthResponse authResponse = response.body();
+                                tokensPersistant.saveAccessToken(authResponse.getAccessToken());
+                                tokensPersistant.saveRefreshToken(authResponse.getRefreshToken());
+                                redirectToMap();
                             } else {
                                 AuthError ae = parseAuthError(response.errorBody());
                                 if("Bad credentials".equals(ae.getErrorDescription())){
@@ -155,6 +162,12 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     });
         }
+    }
+
+    private void redirectToMap(){
+        Intent intent =
+                new Intent(LoginActivity.this, MapsActivity.class);
+        startActivity(intent);
     }
 
     private void attemptRegister(){
