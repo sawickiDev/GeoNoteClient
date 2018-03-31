@@ -19,4 +19,8 @@ public interface GeonoteAuthAPI {
 
     @POST("user/register")
     Call<String> registerRequest(@Body RegisterData registerData);
+
+    @POST("oauth/check_token")
+    @FormUrlEncoded
+    Call<TokenCheckResponse> tokenCheckRequest(@Field("token") String token);
 }

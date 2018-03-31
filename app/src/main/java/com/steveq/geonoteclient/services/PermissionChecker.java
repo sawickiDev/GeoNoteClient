@@ -17,7 +17,7 @@ public class PermissionChecker {
         activity = contextActivity;
     }
 
-    public void handlePermission(String[] permissions, int requestId){
+    public boolean handlePermission(String[] permissions, int requestId){
         List<String> falsyPermissions = permissionNotGranted(permissions);
 
         if(falsyPermissions.size() > 0){
@@ -26,8 +26,9 @@ public class PermissionChecker {
                     falsyPermissions.toArray(new String[0]),
                     requestId
             );
+            return false;
         } else {
-            //permission already granted
+            return true;
         }
     }
 

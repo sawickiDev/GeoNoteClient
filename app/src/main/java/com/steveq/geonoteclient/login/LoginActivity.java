@@ -32,12 +32,8 @@ import retrofit2.Response;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = LoginActivity.class.getSimpleName();
 
-    private static final int INTERNET_REQUEST = 10;
-    private static final String[] NEEDED_PERMISSIONS =
-            new String[]{
-                            "android.permission.INTERNET",
-                            "android.permission.ACCESS_NETWORK_STATE"
-            };
+    private GeonoteAuthController geonoteAuthController;
+    private TokensPersistant tokensPersistant;
 
     @BindView(R.id.credentialsErrorTextView)
     TextView credentialErrorTextView;
@@ -66,20 +62,11 @@ public class LoginActivity extends AppCompatActivity {
     @BindView(R.id.registerTextView)
     TextView registerTextView;
 
-    private GeonoteAuthController geonoteAuthController;
-    private PermissionChecker permissionChecker;
-    private TokensPersistant tokensPersistant;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
-        tokensPersistant = new TokensPersistant(this);
-
-        if(tokensPersistant.hasAccessToken()){
-            redirectToMap();
-        }
 
         passwordEditText.setOnEditorActionListener(((textView, id, keyEvent) -> {
             if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
@@ -91,15 +78,11 @@ public class LoginActivity extends AppCompatActivity {
 
         signInButton.setOnClickListener(view -> attemptLogin());
         registerTextView.setOnClickListener(view -> attemptRegister());
+        tokensPersistant = new TokensPersistant();
         geonoteAuthController = new GeonoteAuthController();
-        permissionChecker = new PermissionChecker(this);
-        permissionChecker.handlePermission(NEEDED_PERMISSIONS, INTERNET_REQUEST);
     }
 
     private void attemptLogin() {
-        if(permissionChecker.permissionNotGranted(NEEDED_PERMISSIONS).size() > 0){
-            return;
-        }
 
         usernameEditText.setError(null);
         passwordEditText.setError(null);
@@ -236,20 +219,6 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         return ae;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch(requestCode){
-            case INTERNET_REQUEST: {
-                if(grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                } else {
-
-                }
-                return;
-            }
-        }
     }
 }
 

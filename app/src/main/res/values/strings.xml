@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GeoNoteClient</string>
+    <string name="app_name">Geo Note</string>
 
     <string name="base_url">https://geo-note.herokuapp.com</string>
 

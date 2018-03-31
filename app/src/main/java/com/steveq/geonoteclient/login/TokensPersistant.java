@@ -4,14 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.steveq.geonoteclient.App;
+
 public class TokensPersistant {
+    private static final String TAG = TokensPersistant.class.getSimpleName();
 
-    private Activity activityContext;
     private SharedPreferences sharedPreferencesHandle;
+    private static final String PREF_FILE_NAME = "tokens_shared";
 
-    public TokensPersistant(Activity activity){
-        this.activityContext = activity;
-        sharedPreferencesHandle = activity.getPreferences(Context.MODE_PRIVATE);
+    public TokensPersistant(){
+        sharedPreferencesHandle =
+                App.getContext().getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE);
     }
 
     public Boolean hasAccessToken(){
