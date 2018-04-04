@@ -15,8 +15,6 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.steveq.geonoteclient.R;
-import com.steveq.geonoteclient.map.MapActivity;
-import com.steveq.geonoteclient.map.MapFragment;
 
 import java.io.IOException;
 
