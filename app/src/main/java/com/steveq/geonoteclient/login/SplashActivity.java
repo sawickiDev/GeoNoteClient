@@ -7,7 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.steveq.geonoteclient.map.MapsActivity;
+import com.steveq.geonoteclient.map.MapFragment;
 import com.steveq.geonoteclient.services.PermissionChecker;
 
 import retrofit2.Call;
@@ -40,7 +40,7 @@ public class SplashActivity extends AppCompatActivity {
 
     private void redirectToMap(){
         Intent intent =
-                new Intent(SplashActivity.this, MapsActivity.class);
+                new Intent(SplashActivity.this, MapFragment.class);
         startActivity(intent);
     }
 

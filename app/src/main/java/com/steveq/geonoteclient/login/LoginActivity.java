@@ -1,9 +1,7 @@
 package com.steveq.geonoteclient.login;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -17,8 +15,8 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.steveq.geonoteclient.R;
-import com.steveq.geonoteclient.map.MapsActivity;
-import com.steveq.geonoteclient.services.PermissionChecker;
+import com.steveq.geonoteclient.map.MapActivity;
+import com.steveq.geonoteclient.map.MapFragment;
 
 import java.io.IOException;
 
@@ -65,7 +63,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.login_activity_layout);
         ButterKnife.bind(this);
 
         passwordEditText.setOnEditorActionListener(((textView, id, keyEvent) -> {
@@ -149,7 +147,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void redirectToMap(){
         Intent intent =
-                new Intent(LoginActivity.this, MapsActivity.class);
+                new Intent(LoginActivity.this, MapActivity.class);
         startActivity(intent);
     }
 
