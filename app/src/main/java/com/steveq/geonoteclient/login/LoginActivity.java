@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.steveq.geonoteclient.R;
+import com.steveq.geonoteclient.map.MapsActivity;
 
 import java.io.IOException;
 
@@ -145,7 +146,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void redirectToMap(){
         Intent intent =
-                new Intent(LoginActivity.this, MapActivity.class);
+                new Intent(LoginActivity.this, MapsActivity.class);
         startActivity(intent);
     }
 
