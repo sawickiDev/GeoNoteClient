@@ -25,4 +25,5 @@
     <string name="welcome_string">Welcome to</string>
     <string name="geo_note">Geo-Note</string>
     <string name="title_activity_maps">Map</string>
+    <string name="location_unavailable">Location service is unavailable</string>
 </resources>
