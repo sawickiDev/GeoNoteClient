@@ -9,6 +9,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
@@ -25,6 +26,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.services.PermissionChecker;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -48,7 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private MarkerOptions currentPosMarker;
     private Marker mapMarker;
     private LocationManager locationManager;
-    private String provider;
+    private static final String PROVIDER = "gps";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,17 +62,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapFragment);
 
-        mapFragment.getMapAsync(this);
+        handlePermissionCheck();
+    }
+
+    private void handlePermissionCheck(){
+
+        PermissionChecker permissionChecker = new PermissionChecker(this);
+        List<String> falsyPermissions = permissionChecker.getFalsyPermissions(NEEDED_PERMISSIONS);
+        if(falsyPermissions.isEmpty())
+            mapFragment.getMapAsync(this);
+        else
+            permissionChecker.requestPermissions(falsyPermissions, LOCATION_REQUEST);
+
     }
 
     @SuppressLint("MissingPermission")
     @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG, "RESUME :: " + locationManager);
-        if (locationManager != null) {
+    public void onMapReady(GoogleMap googleMap) {
+        this.googleMap = googleMap;
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if(!locationManager.isProviderEnabled(PROVIDER)){
+            promptForGpsEnable();
+        } else {
             centerOnCurrentPosition();
-            locationManager.requestLocationUpdates(provider, 400, 300, this);
+            locationManager.requestLocationUpdates(PROVIDER, 400, 300, this);
         }
     }
 
@@ -79,26 +97,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         startActivity(gpsOptionsIntent);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
-    protected void onPause() {
-        super.onPause();
-        locationManager.removeUpdates(this);
+    protected void onResume() {
+        super.onResume();
+
+        if (haveLocationServiceInitialized()) {
+            centerOnCurrentPosition();
+            locationManager.requestLocationUpdates(PROVIDER, 400, 300, this);
+        }
     }
 
-    private void handleLocationInitialization(){
-        if(!locationManager.isProviderEnabled(provider)){
-            Log.d(TAG, "PROMPT FOR GPS");
-            promptForGpsEnable();
-        }
-
-        centerOnCurrentPosition();
+    private boolean haveLocationServiceInitialized(){
+        return locationManager != null;
     }
 
     @SuppressLint("MissingPermission")
     private void centerOnCurrentPosition(){
-        Location location = locationManager.getLastKnownLocation(provider);
+        Location location = locationManager.getLastKnownLocation(PROVIDER);
 
-        Log.d(TAG, "CENTER :: " + location);
         if(location != null){
             LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -108,6 +125,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             currentPosMarker = new MarkerOptions().position(currentPos);
 
             mapMarker = googleMap.addMarker(currentPosMarker);
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
+            googleMap.setMinZoomPreference(14.0f);
+            googleMap.setMaxZoomPreference(16.0f);
         } else {
             Snackbar
                     .make(parentRelativeLayout, getResources().getString(R.string.location_unavailable), Snackbar.LENGTH_SHORT)
@@ -115,63 +135,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private void initializeLocationService(){
-        Location location = locationManager.getLastKnownLocation(provider);
-
-        if(location != null){
-            Log.d(TAG, "Provider " + provider + " has been selected");
-            LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
-            currentPosMarker = new MarkerOptions().position(currentPos);
-            googleMap.addMarker(currentPosMarker);
-        } else {
-            Snackbar
-                .make(parentRelativeLayout, getResources().getString(R.string.location_unavailable), Snackbar.LENGTH_SHORT)
-                .show();
-        }
-    }
-
-    private Criteria getCriteria() {
-        Criteria criteria = new Criteria();
-
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setAltitudeRequired(false);
-        criteria.setBearingRequired(false);
-
-        return criteria;
-    }
-
-
     @Override
-    public void onMapReady(GoogleMap googleMap) {
-        this.googleMap = googleMap;
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        provider = locationManager.getBestProvider(new Criteria(), false);
-        Log.d(TAG, "PROVIDER :: " + provider);
-        Log.d(TAG, "PROVIDERS :: " + locationManager.getAllProviders());
-
-        PermissionChecker permissionChecker = new PermissionChecker(this);
-        if(permissionChecker.handlePermission(NEEDED_PERMISSIONS, LOCATION_REQUEST)){
-            Log.d(TAG, "HANDLE");
-            handleLocationInitialization();
-        }
-        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        this.googleMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        this.googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+    protected void onPause() {
+        super.onPause();
+        if(haveLocationServiceInitialized())
+            locationManager.removeUpdates(this);
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch(requestCode){
             case LOCATION_REQUEST: {
-                Log.d(TAG, "REQUEST PERMISSION RESULT");
                 if(grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                    handleLocationInitialization();
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED){
+                    mapFragment.getMapAsync(this);
                 } else {
                     finish();
                 }
@@ -181,8 +159,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "Latitude changed :: " + location.getLatitude());
-        Log.d(TAG, "Longitude changed :: " + location.getLongitude());
+        LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
+
+        if(mapMarker != null)
+            mapMarker.remove();
+
+
+        currentPosMarker = new MarkerOptions().position(currentPos);
+
+        mapMarker = googleMap.addMarker(currentPosMarker);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
+        googleMap.setMinZoomPreference(12.0f);
+        googleMap.setMaxZoomPreference(14.0f);
     }
 
     @Override

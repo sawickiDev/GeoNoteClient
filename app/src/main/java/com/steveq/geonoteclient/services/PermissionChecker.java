@@ -17,15 +17,22 @@ public class PermissionChecker {
         activity = contextActivity;
     }
 
+    public List<String> getFalsyPermissions(String[] permissions){
+        return permissionNotGranted(permissions);
+    }
+
+    public void requestPermissions(List<String> falsyPermissions, int requestId){
+        ActivityCompat.requestPermissions(
+                activity,
+                falsyPermissions.toArray(new String[0]),
+                requestId
+        );
+    }
+
     public boolean handlePermission(String[] permissions, int requestId){
         List<String> falsyPermissions = permissionNotGranted(permissions);
 
         if(falsyPermissions.size() > 0){
-            ActivityCompat.requestPermissions(
-                    activity,
-                    falsyPermissions.toArray(new String[0]),
-                    requestId
-            );
             return false;
         } else {
             return true;

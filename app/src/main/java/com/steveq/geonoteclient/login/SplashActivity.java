@@ -2,13 +2,15 @@ package com.steveq.geonoteclient.login;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.steveq.geonoteclient.map.MapsActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -33,28 +35,25 @@ public class SplashActivity extends AppCompatActivity {
 
         tokensPersistant = new TokensPersistant();
         geonoteAuthController = new GeonoteAuthController();
+
+        handlePermissionCheck();
+    }
+
+    private void handlePermissionCheck(){
+
         PermissionChecker permissionChecker = new PermissionChecker(this);
-        if(permissionChecker.handlePermission(NEEDED_PERMISSIONS, INTERNET_REQUEST))
+        List<String> falsyPermissions = permissionChecker.getFalsyPermissions(NEEDED_PERMISSIONS);
+        if(falsyPermissions.isEmpty())
             checkTokenValidity();
-    }
+        else
+            permissionChecker.requestPermissions(falsyPermissions, INTERNET_REQUEST);
 
-    private void redirectToMap(){
-        Intent intent =
-                new Intent(SplashActivity.this, MapsActivity.class);
-        startActivity(intent);
-    }
-
-    private void redirectToLogin(){
-        Intent intent =
-                new Intent(SplashActivity.this, LoginActivity.class);
-        startActivity(intent);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch(requestCode){
             case INTERNET_REQUEST: {
-                Log.d(TAG, "REQUEST PERMISSION RESULT");
                 if(grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     checkTokenValidity();
@@ -66,9 +65,7 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void checkTokenValidity(){
-        Log.d(TAG, "CHECK VALIDITY :: " + tokensPersistant.hasAccessToken());
         if(tokensPersistant.hasAccessToken()){
-            Log.d(TAG, "CHECK VALIDITY :: " + tokensPersistant.getAccessToken());
             geonoteAuthController
                     .prepareTokenCheckCall(tokensPersistant.getAccessToken())
                     .enqueue(new Callback<TokenCheckResponse>() {
@@ -95,5 +92,17 @@ public class SplashActivity extends AppCompatActivity {
         } else {
             redirectToLogin();
         }
+    }
+
+    private void redirectToMap(){
+        Intent intent =
+                new Intent(SplashActivity.this, MapsActivity.class);
+        startActivity(intent);
+    }
+
+    private void redirectToLogin(){
+        Intent intent =
+                new Intent(SplashActivity.this, LoginActivity.class);
+        startActivity(intent);
     }
 }
