@@ -55,10 +55,11 @@ public class SplashActivity extends AppCompatActivity {
         switch(requestCode){
             case INTERNET_REQUEST: {
                 if(grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED){
                     checkTokenValidity();
                 } else {
-
+                    finish();
                 }
             }
         }
@@ -103,6 +104,12 @@ public class SplashActivity extends AppCompatActivity {
     private void redirectToLogin(){
         Intent intent =
                 new Intent(SplashActivity.this, LoginActivity.class);
+        startActivity(intent);
+    }
+
+    private void redirectToError(){
+        Intent intent =
+                new Intent(SplashActivity.this, ConnectionErrorActivity.class);
         startActivity(intent);
     }
 }
