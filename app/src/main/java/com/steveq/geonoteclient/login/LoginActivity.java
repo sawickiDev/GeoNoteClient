@@ -16,6 +16,7 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.map.MapsActivity;
+import com.steveq.geonoteclient.services.TokensPersistant;
 
 import java.io.IOException;
 

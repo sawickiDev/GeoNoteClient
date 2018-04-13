@@ -1,7 +1,6 @@
 package com.steveq.geonoteclient.map;
 
 import android.annotation.SuppressLint;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,16 +8,22 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -28,12 +33,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.steveq.geonoteclient.R;
-import com.steveq.geonoteclient.login.AuthError;
-import com.steveq.geonoteclient.login.AuthResponse;
-import com.steveq.geonoteclient.login.GeonoteAuthController;
-import com.steveq.geonoteclient.login.TokensPersistant;
+import com.steveq.geonoteclient.login.LoginActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
+import com.steveq.geonoteclient.services.RadarService;
+import com.steveq.geonoteclient.services.TokensPersistant;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -51,7 +56,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     "android.permission.ACCESS_FINE_LOCATION",
                     "android.permission.ACCESS_COARSE_LOCATION"
             };
-    private static final String PROVIDER = "gps";
+
+    @BindView(R.id.drawerContainer)
+    DrawerLayout drawerContainer;
+
+    @BindView(R.id.drawerNavigationView)
+    NavigationView drawerNavigationView;
+
+    @BindView(R.id.burgerImageButton)
+    ImageButton burgerImageButton;
 
     @BindView(R.id.parentRelativeLayout)
     View parentRelativeLayout;
@@ -66,10 +79,102 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap googleMap;
     private MarkerOptions currentPosMarker;
-    private Marker mapMarker;
+    private Marker currentLocationMarker;
+    private List<Marker> notesMarkers = new ArrayList<>();
     private LocationManager locationManager;
     private GeonoteNoteController geonoteNoteController;
     private Location location;
+    private String bestProvider;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private TokensPersistant tokensPersistant;
+
+    View.OnClickListener publishListener = v -> {
+        String noteText = noteEditText.getText().toString();
+        hideKeyboard();
+        if(noteWithinConstraints(noteText)){
+            geonoteNoteController.prepareCreateCall(
+                    new RequestNote(
+                            noteText,
+                            this.location.getLatitude(),
+                            this.location.getLongitude())
+            ).enqueue(new Callback<GeoNote>() {
+                @Override
+                public void onResponse(Call<GeoNote> call, Response<GeoNote> response) {
+                    if(response.isSuccessful()){
+
+                        GeoNote geoNote = response.body();
+                        googleMap.addMarker(geoNoteMarkerOptions(geoNote));
+                        noteEditText.setText("");
+                        showSimpleSnackbar(getResources().getString(R.string.note_created));
+
+                    } else if (response.code() == 406){
+                        showSimpleSnackbar(getResources().getString(R.string.location_occupied));
+                    } else if (response.code() == 409){
+                        showSimpleSnackbar(getResources().getString(R.string.spam_warning));
+                    } else {
+                        showSimpleSnackbar(getResources().getString(R.string.publish_error));
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<GeoNote> call, Throwable t) {
+                    showSimpleSnackbar(getResources().getString(R.string.connection_error));
+                }
+            });
+        }
+    };
+
+    NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =
+            menuItem -> {
+                menuItem.setChecked(true);
+                drawerContainer.closeDrawers();
+                String itemName = menuItem.getTitle().toString();
+                switch(itemName){
+                    case "Current Location" :
+                        centerOnCurrentPosition();
+                        break;
+                    case "Settings" :
+                        Log.d(TAG, "Hello settings");
+                        break;
+                    case "Logout" :
+                        Log.d(TAG, "Hello logout");
+                        performLogout();
+                        break;
+                    default:
+                        break;
+                }
+                return true;
+            };
+
+    private void performLogout() {
+        tokensPersistant.removeAccessToken();
+        if(!tokensPersistant.hasAccessToken())
+            redirectToLogin();
+    }
+
+    private void redirectToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        this.startActivity(intent);
+    }
+
+    private void hideKeyboard(){
+        View view = this.getCurrentFocus();
+        if(view != null){
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    private boolean noteWithinConstraints(String note) {
+        return !note.isEmpty()
+                && note.length() <= this.getResources().getInteger(R.integer.max_chars);
+    }
+
+    private void showSimpleSnackbar(String message){
+        Snackbar
+            .make(parentRelativeLayout, message, Snackbar.LENGTH_LONG)
+            .show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,50 +182,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_maps);
         ButterKnife.bind(this);
         geonoteNoteController = new GeonoteNoteController();
+        tokensPersistant = new TokensPersistant();
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapFragment);
 
         handlePermissionCheck();
-        publishFloatingButton.setOnClickListener(v -> {
-            String noteText = noteEditText.getText().toString();
-            if(!"".equals(noteText)){
-                geonoteNoteController.prepareCreateCall(
-                        new RequestNote(
-                                        noteText,
-                                        this.location.getLatitude(),
-                                        this.location.getLongitude())
-                ).enqueue(new Callback<String>() {
-                    @Override
-                    public void onResponse(Call<String> call, Response<String> response) {
-                        if(response.isSuccessful()){
-                            MarkerOptions newlyNoteMarker =
-                                    new MarkerOptions()
-                                            .position(new LatLng(location.getLatitude(), location.getLongitude()))
-                                            .snippet(noteText)
-                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
-                            googleMap.addMarker(newlyNoteMarker);
-                        } else if (response.code() == 409){
-                            Snackbar
-                                    .make(parentRelativeLayout, response.body(), Snackbar.LENGTH_LONG)
-                                    .show();
-                        } else {
-                            Snackbar
-                                    .make(parentRelativeLayout, getResources().getString(R.string.publish_error), Snackbar.LENGTH_SHORT)
-                                    .show();
+        fusedLocationProviderClient =
+                LocationServices.getFusedLocationProviderClient(this);
 
-                        }
-                    }
+        publishFloatingButton.setOnClickListener(publishListener);
+        drawerNavigationView.setNavigationItemSelectedListener(navigationItemSelectedListener);
 
-                    @Override
-                    public void onFailure(Call<String> call, Throwable t) {
-                        Log.d(TAG, t.getMessage());
-                        Snackbar
-                                .make(parentRelativeLayout, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
-                                .show();
-                    }
-                });
-            }
+        burgerImageButton.setOnClickListener(v -> {
+            drawerContainer.openDrawer(GravityCompat.START);
         });
     }
 
@@ -135,19 +210,63 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    private MarkerOptions geoNoteMarkerOptions(GeoNote geoNote) {
+        return new MarkerOptions()
+                        .position(new LatLng(geoNote.getLat(), geoNote.getLng()))
+                        .title(geoNote.getOwner())
+                        .snippet(geoNote.getNote())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+    }
+
     @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
+        this.googleMap.getUiSettings().setZoomControlsEnabled(true);
+        this.googleMap.getUiSettings().setZoomGesturesEnabled(true);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        bestProvider =
+                locationManager.getBestProvider(new Criteria(), false);
 
-        if(!locationManager.isProviderEnabled(PROVIDER)){
+        if(!locationManager.isProviderEnabled(bestProvider)){
             promptForGpsEnable();
         } else {
             centerOnCurrentPosition();
-            locationManager.requestLocationUpdates(PROVIDER, 400, 300, this);
+            showNearbyNotes(this.location);
+            locationManager.requestLocationUpdates(bestProvider, 400, 300, this);
         }
+    }
+
+    private void showNearbyNotes(Location location){
+        geonoteNoteController.prepareFetchCall(location.getLatitude(), location.getLongitude())
+                .enqueue(new Callback<GeoNoteBatch>() {
+                    @Override
+                    public void onResponse(Call<GeoNoteBatch> call, Response<GeoNoteBatch> response) {
+                        clearNotesMarkers();
+                        placeNotesOnMap(response.body().getNotes());
+                    }
+
+                    @Override
+                    public void onFailure(Call<GeoNoteBatch> call, Throwable t) {
+                        Snackbar
+                                .make(parentRelativeLayout, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
+                                .show();
+                    }
+                });
+    }
+
+    private void clearNotesMarkers() {
+        notesMarkers.stream().forEach(m -> m.remove());
+        notesMarkers.clear();
+    }
+
+    private void placeNotesOnMap(List<GeoNote> geoNotes) {
+        geoNotes.stream().forEach(gf -> {
+            notesMarkers.add(
+                googleMap.addMarker(geoNoteMarkerOptions(gf))
+            );
+        });
     }
 
     private void promptForGpsEnable(){
@@ -163,7 +282,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (haveLocationServiceInitialized()) {
             centerOnCurrentPosition();
-            locationManager.requestLocationUpdates(PROVIDER, 400, 300, this);
+            locationManager.requestLocationUpdates(bestProvider, 400, 300, this);
         }
     }
 
@@ -173,25 +292,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @SuppressLint("MissingPermission")
     private void centerOnCurrentPosition(){
-         location = locationManager.getLastKnownLocation(PROVIDER);
+        location = locationManager.getLastKnownLocation(bestProvider);
 
-        if(location != null){
-            LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
+        fusedLocationProviderClient.getLastLocation()
+                .addOnSuccessListener(l -> {
+                    location = l;
+                    moveMapToLocation(l);
+                })
+                .addOnFailureListener(e -> {
+                    Snackbar
+                        .make(parentRelativeLayout, getResources().getString(R.string.location_unavailable), Snackbar.LENGTH_SHORT)
+                        .show();
+                });
+    }
 
-            if(mapMarker != null)
-                mapMarker.remove();
+    private void moveMapToLocation(Location location){
+        LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
 
-            currentPosMarker = new MarkerOptions().position(currentPos);
+        if(currentLocationMarker != null)
+            currentLocationMarker.remove();
 
-            mapMarker = googleMap.addMarker(currentPosMarker);
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
-            googleMap.setMinZoomPreference(14.0f);
-            googleMap.setMaxZoomPreference(16.0f);
-        } else {
-            Snackbar
-                    .make(parentRelativeLayout, getResources().getString(R.string.location_unavailable), Snackbar.LENGTH_SHORT)
-                    .show();
-        }
+        currentPosMarker = new MarkerOptions().position(currentPos);
+
+        currentLocationMarker = googleMap.addMarker(currentPosMarker);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPos, 18.0f));
     }
 
     @Override
@@ -217,20 +341,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        bootstrapRadarService();
+    }
+
+    private void bootstrapRadarService(){
+        Intent intent = new Intent(this, RadarService.class);
+        this.startService(intent);
+    }
+
+    @Override
     public void onLocationChanged(Location location) {
         this.location = location;
         LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
 
-        if(mapMarker != null)
-            mapMarker.remove();
+        if(currentLocationMarker != null)
+            currentLocationMarker.remove();
 
-
-        currentPosMarker = new MarkerOptions().position(currentPos);
-
-        mapMarker = googleMap.addMarker(currentPosMarker);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
-        googleMap.setMinZoomPreference(12.0f);
-        googleMap.setMaxZoomPreference(14.0f);
+        moveMapToLocation(location);
+        showNearbyNotes(location);
     }
 
     @Override

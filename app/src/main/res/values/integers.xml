@@ -1,0 +1,3 @@
+<resources>
+    <integer name="max_chars">140</integer>
+</resources>

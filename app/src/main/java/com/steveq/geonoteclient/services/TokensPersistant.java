@@ -1,6 +1,5 @@
-package com.steveq.geonoteclient.login;
+package com.steveq.geonoteclient.services;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -39,5 +38,11 @@ public class TokensPersistant {
 
     public String getRefreshToken(){
         return sharedPreferencesHandle.getString("refresh_token", "");
+    }
+
+    public void removeAccessToken() {
+        SharedPreferences.Editor editor = sharedPreferencesHandle.edit();
+        editor.remove("access_token");
+        editor.apply();
     }
 }

@@ -25,7 +25,20 @@
     <string name="welcome_string">Welcome to</string>
     <string name="geo_note">Geo-Note</string>
     <string name="title_activity_maps">Map</string>
-    <string name="location_unavailable">Location service is unavailable</string>
+    <string name="location_unavailable">Couldn\'t find your location</string>
     <string name="publish_error">Error occured during publishing</string>
     <string name="conn_error">Connection Error :( Please try restart app...</string>
+    <string name="spam_warning">You created too much notes in this neighbourhood</string>
+    <string name="title_activity_drawer">DrawerActivity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="note_created">Note created :)</string>
+    <string name="location_occupied">Someone left note at exact same location :(</string>
+    <string name="current_location">Current Location</string>
+    <string name="settings">Settings</string>
+    <string name="logout">Logout</string>
 </resources>

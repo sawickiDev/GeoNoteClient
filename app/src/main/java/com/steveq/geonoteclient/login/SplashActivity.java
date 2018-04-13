@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.steveq.geonoteclient.map.MapsActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
+import com.steveq.geonoteclient.services.TokensPersistant;
 
 import java.util.List;
 
