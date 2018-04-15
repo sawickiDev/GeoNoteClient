@@ -285,6 +285,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.d(TAG, "RESUME MAP");
 
+        Intent intent = new Intent(this, RadarService.class);
+        stopService(intent);
+
         if (haveLocationServiceInitialized()) {
             centerOnCurrentPosition();
             showNearbyNotes(this.location);

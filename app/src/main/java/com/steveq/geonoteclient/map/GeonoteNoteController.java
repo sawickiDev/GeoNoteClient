@@ -1,6 +1,7 @@
 package com.steveq.geonoteclient.map;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
@@ -23,10 +24,10 @@ public class GeonoteNoteController {
     private Retrofit retrofit;
     private GeonoteNoteAPI geonoteNoteAPI;
     private TokensPersistant tokensPersistant;
-    private Activity activity;
+    private Context context;
 
-    public GeonoteNoteController(Activity activity){
-        this.activity = activity;
+    public GeonoteNoteController(Context context){
+        this.context = context;
 
         gson =
                 new GsonBuilder()
@@ -55,10 +56,10 @@ public class GeonoteNoteController {
     }
 
     public Call<GeoNoteBatch> prepareFetchCall(Double lat, Double lng){
-        SharedPreferences sh = PreferenceManager.getDefaultSharedPreferences(this.activity);
-        String radiusPref = this.activity.getString(R.string.settings_radius_key);
-        String ownedPref = this.activity.getString(R.string.settings_owned_key);
-        String othersPref = this.activity.getString(R.string.settings_others_key);
+        SharedPreferences sh = PreferenceManager.getDefaultSharedPreferences(this.context);
+        String radiusPref = this.context.getString(R.string.settings_radius_key);
+        String ownedPref = this.context.getString(R.string.settings_owned_key);
+        String othersPref = this.context.getString(R.string.settings_others_key);
 
         StringJoiner joiner = new StringJoiner(" ");
         joiner
