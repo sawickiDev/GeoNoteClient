@@ -61,7 +61,12 @@
         <service
             android:name=".services.RadarService"
             android:enabled="true"
-            android:exported="false"></service>
+            android:exported="false" />
+
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/SettingsStyle"/>
     </application>
 
 </manifest>

@@ -88,6 +88,7 @@ public class SplashActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(Call<TokenCheckResponse> call, Throwable t) {
                             //intentionally blank
+                            redirectToError();
                             Log.d(TAG, "CHECK FAILURE");
                         }
                     });

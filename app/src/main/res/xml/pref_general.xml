@@ -1,0 +1,32 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/settings_map_title"
+        android:key="@string/settings_map_key">
+
+        <com.steveq.geonoteclient.settings.NumberPickerPreference
+            android:key="@string/settings_radius_key"
+            android:title="@string/settings_radius_title"
+            app:minValue="100"
+            app:maxValue="1000"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/settings_visibility_cat"
+        android:key="@string/settings_visibility_key">
+
+        <CheckBoxPreference
+            android:key="@string/settings_owned_key"
+            android:title="@string/settings_owned_title"
+            android:defaultValue="true"/>
+
+        <CheckBoxPreference
+            android:key="@string/settings_others_key"
+            android:title="@string/settings_others_title"
+            android:defaultValue="false"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -8,15 +8,14 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -37,6 +36,7 @@ import com.steveq.geonoteclient.login.LoginActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
 import com.steveq.geonoteclient.services.RadarService;
 import com.steveq.geonoteclient.services.TokensPersistant;
+import com.steveq.geonoteclient.settings.SettingsActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,10 +134,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         centerOnCurrentPosition();
                         break;
                     case "Settings" :
-                        Log.d(TAG, "Hello settings");
+                        Intent intent = new Intent(this, SettingsActivity.class);
+                        this.startActivity(intent);
                         break;
                     case "Logout" :
-                        Log.d(TAG, "Hello logout");
                         performLogout();
                         break;
                     default:
