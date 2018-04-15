@@ -1,6 +1,7 @@
 package com.steveq.geonoteclient.services;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.location.Criteria;
@@ -11,8 +12,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
+import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.map.GeoNote;
 import com.steveq.geonoteclient.map.GeoNoteBatch;
 import com.steveq.geonoteclient.map.GeonoteNoteController;
@@ -31,6 +35,7 @@ public class RadarHandler extends Handler implements LocationListener {
     private LocationManager locationManager;
     private String bestProvider;
     private GeonoteNoteController geonoteNoteController;
+    private int currentNotification;
 
     private RadarHandler(Looper looper) {
         super(looper);
@@ -82,7 +87,25 @@ public class RadarHandler extends Handler implements LocationListener {
                             return Float.compare(dist1, dist2);
                         });
 
-                        closest.ifPresent(v -> Log.d(TAG, v.toString()));
+                        closest.ifPresent(v -> {
+
+                            Log.d(TAG, v.toString());
+
+                            NotificationManagerCompat notificationManagerCompat =
+                                    NotificationManagerCompat.from(parentService);
+
+                            if(currentNotification != 0)
+                                notificationManagerCompat.cancel(currentNotification);
+
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(parentService, TAG)
+                                    .setSmallIcon(R.drawable.vec_logo_small)
+                                    .setContentTitle("You got note from " + v.getOwner())
+                                    .setContentText(v.getNote())
+                                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+                            notificationManagerCompat.notify((int)System.currentTimeMillis(), builder.build());
+
+                        });
                     }
 
                     @Override
