@@ -1,5 +1,9 @@
 package com.steveq.geonoteclient.map;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.steveq.geonoteclient.App;
@@ -19,8 +23,11 @@ public class GeonoteNoteController {
     private Retrofit retrofit;
     private GeonoteNoteAPI geonoteNoteAPI;
     private TokensPersistant tokensPersistant;
+    private Activity activity;
 
-    public GeonoteNoteController(){
+    public GeonoteNoteController(Activity activity){
+        this.activity = activity;
+
         gson =
                 new GsonBuilder()
                         .setLenient()
@@ -48,16 +55,29 @@ public class GeonoteNoteController {
     }
 
     public Call<GeoNoteBatch> prepareFetchCall(Double lat, Double lng){
+        SharedPreferences sh = PreferenceManager.getDefaultSharedPreferences(this.activity);
+        String radiusPref = this.activity.getString(R.string.settings_radius_key);
+        String ownedPref = this.activity.getString(R.string.settings_owned_key);
+        String othersPref = this.activity.getString(R.string.settings_others_key);
+
         StringJoiner joiner = new StringJoiner(" ");
         joiner
             .add("Bearer")
             .add(tokensPersistant.getAccessToken());
+
+        StringJoiner accessJoiner = new StringJoiner(",");
+
+        if(sh.getBoolean(ownedPref, true))
+            accessJoiner.add("owned");
+        if(sh.getBoolean(othersPref, false))
+            accessJoiner.add("others");
+
         return geonoteNoteAPI.fetchNotes(
                 joiner.toString(),
                 lat,
                 lng,
-                1000,
-                "owned,others");
+                sh.getInt(radiusPref, 100),
+                accessJoiner.toString());
     }
 
 }

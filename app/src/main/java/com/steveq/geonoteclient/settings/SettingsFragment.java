@@ -37,7 +37,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
 
-        Preference preference = findPreference(getString(R.string.settings_radius_key));
+        Preference preference = findPreference(getActivity().getResources().getString(R.string.settings_radius_key));
 
         preference.setSummary(String.valueOf(sharedPreferences.getInt(getString(R.string.settings_radius_key), 100)));
 

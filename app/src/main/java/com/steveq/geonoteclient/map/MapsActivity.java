@@ -16,6 +16,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -181,7 +182,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         ButterKnife.bind(this);
-        geonoteNoteController = new GeonoteNoteController();
+        geonoteNoteController = new GeonoteNoteController(this);
         tokensPersistant = new TokensPersistant();
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -244,6 +245,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onResponse(Call<GeoNoteBatch> call, Response<GeoNoteBatch> response) {
                         clearNotesMarkers();
+                        Log.d(TAG, "FETCHED :: " + response.body().getNotes());
+                        Log.d(TAG, "FROM :: " + call.request().url());
                         placeNotesOnMap(response.body().getNotes());
                     }
 
@@ -280,8 +283,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
 
+        Log.d(TAG, "RESUME MAP");
+
         if (haveLocationServiceInitialized()) {
             centerOnCurrentPosition();
+            showNearbyNotes(this.location);
             locationManager.requestLocationUpdates(bestProvider, 400, 300, this);
         }
     }
