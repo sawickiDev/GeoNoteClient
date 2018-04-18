@@ -72,8 +72,6 @@ public class RadarHandler extends Handler implements LocationListener {
                 .enqueue(new retrofit2.Callback<GeoNoteBatch>() {
                     @Override
                     public void onResponse(Call<GeoNoteBatch> call, Response<GeoNoteBatch> response) {
-                        Log.d(TAG, "FETCHED :: " + response.body().getNotes());
-                        Log.d(TAG, "FROM :: " + call.request().url());
                         List<GeoNote> fetchedNotes = response.body().getNotes();
                         Optional<GeoNote> closest = fetchedNotes.stream().min((n1, n2) -> {
                             Location loc1 = new Location("");
@@ -92,12 +90,8 @@ public class RadarHandler extends Handler implements LocationListener {
 
                         closest.ifPresent(v -> {
 
-                            Log.d(TAG, v.toString());
-
                             NotificationManagerCompat notificationManagerCompat =
                                     NotificationManagerCompat.from(parentService);
-
-                            Log.d(TAG, "CURRENT NOTIFICATION :: " + currentNotification);
 
                             if(currentNotification != 0)
                                 notificationManagerCompat.cancel(currentNotification);
