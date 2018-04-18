@@ -354,6 +354,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onStop() {
         super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         if(tokensPersistant.hasAccessToken())
             bootstrapRadarService();
     }

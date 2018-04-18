@@ -33,7 +33,6 @@ public class SettingsActivity extends Activity{
 
 
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(sf);
-        sf.registerParent(this);
     }
 
     @Override

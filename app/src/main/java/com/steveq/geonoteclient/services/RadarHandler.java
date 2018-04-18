@@ -23,6 +23,7 @@ import com.steveq.geonoteclient.map.GeonoteNoteController;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -36,6 +37,7 @@ public class RadarHandler extends Handler implements LocationListener {
     private String bestProvider;
     private GeonoteNoteController geonoteNoteController;
     private int currentNotification;
+    private Random randomGen;
 
     private RadarHandler(Looper looper) {
         super(looper);
@@ -44,7 +46,8 @@ public class RadarHandler extends Handler implements LocationListener {
     @SuppressLint("MissingPermission")
     public RadarHandler(Looper looper, Service service) {
         this(looper);
-        Log.d(TAG, "START HANDLER");
+
+        randomGen = new Random();
         parentService = service;
         this.geonoteNoteController = new GeonoteNoteController(parentService);
         locationManager = (LocationManager) parentService.getSystemService(Context.LOCATION_SERVICE);
@@ -94,6 +97,8 @@ public class RadarHandler extends Handler implements LocationListener {
                             NotificationManagerCompat notificationManagerCompat =
                                     NotificationManagerCompat.from(parentService);
 
+                            Log.d(TAG, "CURRENT NOTIFICATION :: " + currentNotification);
+
                             if(currentNotification != 0)
                                 notificationManagerCompat.cancel(currentNotification);
 
@@ -103,7 +108,8 @@ public class RadarHandler extends Handler implements LocationListener {
                                     .setContentText(v.getNote())
                                     .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-                            notificationManagerCompat.notify((int)System.currentTimeMillis(), builder.build());
+                            currentNotification = randomGen.nextInt();
+                            notificationManagerCompat.notify(currentNotification, builder.build());
 
                         });
                     }
