@@ -245,8 +245,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     @Override
                     public void onResponse(Call<GeoNoteBatch> call, Response<GeoNoteBatch> response) {
                         clearNotesMarkers();
-                        Log.d(TAG, "FETCHED :: " + response.body().getNotes());
-                        Log.d(TAG, "FROM :: " + call.request().url());
                         placeNotesOnMap(response.body().getNotes());
                     }
 
@@ -282,8 +280,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onResume() {
         super.onResume();
-
-        Log.d(TAG, "RESUME MAP");
 
         Intent intent = new Intent(this, RadarService.class);
         stopService(intent);
@@ -349,10 +345,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+//    @Override
+//    public void onBackPressed() {
+//        //do nothing on back pressed
+//        finish();
+//    }
+
     @Override
     protected void onStop() {
         super.onStop();
-        bootstrapRadarService();
+        if(tokensPersistant.hasAccessToken())
+            bootstrapRadarService();
     }
 
     private void bootstrapRadarService(){

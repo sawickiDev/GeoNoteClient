@@ -16,6 +16,7 @@ public class SettingsActivity extends Activity{
     private static final String TAG = SettingsFragment.class.getSimpleName();
 
     FrameLayout fragmentContainer;
+    SettingsFragment sf;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -25,7 +26,7 @@ public class SettingsActivity extends Activity{
 
         fragmentContainer = (FrameLayout) findViewById(R.id.fragmentContainer);
 
-        SettingsFragment sf = new SettingsFragment();
+        sf = new SettingsFragment();
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainer, sf)
                 .commit();
@@ -33,5 +34,13 @@ public class SettingsActivity extends Activity{
 
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(sf);
         sf.registerParent(this);
+    }
+
+    @Override
+    protected void onStop() {
+        getFragmentManager().beginTransaction()
+                .remove(sf)
+                .commit();
+        super.onStop();
     }
 }

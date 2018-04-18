@@ -1,5 +1,6 @@
 package com.steveq.geonoteclient.login;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -10,7 +11,10 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -33,8 +37,8 @@ public class LoginActivity extends AppCompatActivity {
     private GeonoteAuthController geonoteAuthController;
     private TokensPersistant tokensPersistant;
 
-    @BindView(R.id.credentialsErrorTextView)
-    TextView credentialErrorTextView;
+    @BindView(R.id.formLinearLayout)
+    LinearLayout formLinearLayout;
 
     @BindView(R.id.usernameTextInputLayout)
     TextInputLayout usernameTextInputLayout;
@@ -48,9 +52,6 @@ public class LoginActivity extends AppCompatActivity {
     @BindView(R.id.passwordEditText)
     TextInputEditText passwordEditText;
 
-    @BindView(R.id.login_progress)
-    View progressView;
-
     @BindView(R.id.login_form)
     View loginFormView;
 
@@ -59,6 +60,12 @@ public class LoginActivity extends AppCompatActivity {
 
     @BindView(R.id.registerTextView)
     TextView registerTextView;
+
+    @BindView(R.id.loginProgressBar)
+    ProgressBar loginProgressBar;
+
+    private boolean loggingProcessing = false;
+    private boolean registerProcessing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,17 +81,43 @@ public class LoginActivity extends AppCompatActivity {
             return false;
         }));
 
-        signInButton.setOnClickListener(view -> attemptLogin());
-        registerTextView.setOnClickListener(view -> attemptRegister());
+        signInButton.setOnClickListener(view -> {
+            if (!loggingProcessing)
+                attemptLogin();
+        });
+        registerTextView.setOnClickListener(view -> {
+            if (!registerProcessing)
+                attemptRegister();
+        });
         tokensPersistant = new TokensPersistant();
         geonoteAuthController = new GeonoteAuthController();
     }
 
-    private void attemptLogin() {
+    private void toggleProgressBar() {
+        if (loginProgressBar.getVisibility() == View.GONE){
+            formLinearLayout.setVisibility(View.GONE);
+            loginProgressBar.setVisibility(View.VISIBLE);
+        } else {
+            formLinearLayout.setVisibility(View.VISIBLE);
+            loginProgressBar.setVisibility(View.GONE);
+        }
 
+    }
+
+    private void hideKeyboard(){
+        View view = this.getCurrentFocus();
+        if(view != null){
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    private void attemptLogin() {
+        loggingProcessing = true;
         usernameEditText.setError(null);
         passwordEditText.setError(null);
-        credentialErrorTextView.setVisibility(View.GONE);
+        hideKeyboard();
+        toggleProgressBar();
 
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
@@ -110,14 +143,15 @@ public class LoginActivity extends AppCompatActivity {
 
         if (cancel) {
             focusView.requestFocus();
+            toggleProgressBar();
         } else {
-            showProgress(true);
+            toggleProgressBar();
             geonoteAuthController
                     .prepareLoginCall(username, password)
                     .enqueue(new Callback<AuthResponse>() {
                         @Override
                         public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
-                            showProgress(false);
+                            toggleProgressBar();
                             if(response.isSuccessful()){
                                 Log.d(TAG, String.valueOf(response.body()));
                                 AuthResponse authResponse = response.body();
@@ -135,8 +169,7 @@ public class LoginActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<AuthResponse> call, Throwable t) {
-                            Log.d(TAG, t.getMessage());
-                            showProgress(false);
+                            toggleProgressBar();
                             Snackbar
                                 .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
                                 .show();
@@ -149,20 +182,23 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent =
                 new Intent(LoginActivity.this, MapsActivity.class);
         startActivity(intent);
+        finish();
     }
 
     private void attemptRegister(){
 
+        registerProcessing = true;
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
 
-        showProgress(true);
+        toggleProgressBar();
+        hideKeyboard();
         geonoteAuthController
             .prepareRegisterCall(new RegisterData(username, password))
             .enqueue(new Callback<String>() {
                 @Override
                 public void onResponse(Call<String> call, Response<String> response) {
-                    showProgress(false);
+                    toggleProgressBar();
                     if(response.isSuccessful()){
                         Log.d(TAG, String.valueOf(response.body()));
                         if("OK".equals(response.body())){
@@ -182,7 +218,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<String> call, Throwable t) {
-                    showProgress(false);
+                    toggleProgressBar();
                     Snackbar
                         .make(loginFormView, getResources().getString(R.string.connection_error), Snackbar.LENGTH_SHORT)
                         .show();
@@ -192,16 +228,12 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean isUsernameValid(String username) {
         //can be customized
-        return username.length() > 4;
+        return username.length() >= 4;
     }
 
     private boolean isPasswordValid(String password) {
         //can be customized
-        return password.length() > 4;
-    }
-
-    private void showProgress(final boolean show) {
-        progressView.setVisibility(show ? View.VISIBLE : View.GONE);
+        return password.length() >= 4;
     }
 
     private AuthError parseAuthError(ResponseBody errorResponse){

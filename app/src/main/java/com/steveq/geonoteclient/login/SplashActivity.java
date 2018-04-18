@@ -101,17 +101,20 @@ public class SplashActivity extends AppCompatActivity {
         Intent intent =
                 new Intent(SplashActivity.this, MapsActivity.class);
         startActivity(intent);
+        finish();
     }
 
     private void redirectToLogin(){
         Intent intent =
                 new Intent(SplashActivity.this, LoginActivity.class);
         startActivity(intent);
+        finish();
     }
 
     private void redirectToError(){
         Intent intent =
                 new Intent(SplashActivity.this, ConnectionErrorActivity.class);
         startActivity(intent);
+        finish();
     }
 }
