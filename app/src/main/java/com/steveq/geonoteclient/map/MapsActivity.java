@@ -21,6 +21,10 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -32,6 +36,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.steveq.geonoteclient.App;
 import com.steveq.geonoteclient.R;
 import com.steveq.geonoteclient.login.LoginActivity;
 import com.steveq.geonoteclient.services.PermissionChecker;
@@ -39,6 +44,7 @@ import com.steveq.geonoteclient.services.RadarService;
 import com.steveq.geonoteclient.services.TokensPersistant;
 import com.steveq.geonoteclient.settings.SettingsActivity;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +82,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @BindView(R.id.publishFloatingActionButton)
     FloatingActionButton publishFloatingButton;
 
+    @BindView(R.id.expirationSeekBar)
+    SeekBar expirationSeekBar;
+
+    @BindView(R.id.unitRadioGroup)
+    RadioGroup unitRadioGroup;
+
+    @BindView(R.id.minutesRadioButton)
+    RadioButton minutesRadioButton;
+
+    @BindView(R.id.hoursRadioButton)
+    RadioButton hoursRadioButton;
+
+    @BindView(R.id.daysRadioButton)
+    RadioButton daysRadioButton;
+
+    @BindView(R.id.timeTextView)
+    TextView timeTextView;
+
     SupportMapFragment mapFragment;
 
     private GoogleMap googleMap;
@@ -88,22 +112,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private String bestProvider;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private TokensPersistant tokensPersistant;
+    private int seekBarMin;
+    private int seekBarIncrement = 1;
+    private int seekBarValue;
+    private int seekConverterValue;
+    private int unitIndicator;
 
     View.OnClickListener publishListener = v -> {
         String noteText = noteEditText.getText().toString();
         hideKeyboard();
         if(noteWithinConstraints(noteText)){
-            geonoteNoteController.prepareCreateCall(
+            RequestNote rn =
                     new RequestNote(
-                            noteText,
-                            this.location.getLatitude(),
-                            this.location.getLongitude())
+                        noteText,
+                        this.location.getLatitude(),
+                        this.location.getLongitude(),
+                        this.seekBarValue * this.seekConverterValue
+                    );
+            Log.d(TAG, "REQUEST NOTE :: " + rn);
+            geonoteNoteController.prepareCreateCall(
+                rn
             ).enqueue(new Callback<GeoNote>() {
                 @Override
                 public void onResponse(Call<GeoNote> call, Response<GeoNote> response) {
                     if(response.isSuccessful()){
 
                         GeoNote geoNote = response.body();
+                        Log.d(TAG, "CREATED GEONOTE :: " + geoNote);
                         googleMap.addMarker(geoNoteMarkerOptions(geoNote));
                         noteEditText.setText("");
                         showSimpleSnackbar(getResources().getString(R.string.note_created));
@@ -198,6 +233,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         burgerImageButton.setOnClickListener(v -> {
             drawerContainer.openDrawer(GravityCompat.START);
         });
+
+        initializeMinutesSeekBar();
+        expirationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                int progress = (i + seekBarMin) / seekBarIncrement;
+                progress = progress * seekBarIncrement;
+                seekBarValue = progress;
+                timeTextView.setText(App.getContext().getString(unitIndicator, String.valueOf(seekBarValue)));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        unitRadioGroup.setOnCheckedChangeListener((radioGroup, i) -> {
+            switch(i){
+                //minutes
+                case 2131296371:
+                    initializeMinutesSeekBar();
+                    break;
+                //hours
+                case 2131296345:
+                    initializeHoursSeekBar();
+                    break;
+                //days
+                case 2131296314:
+                    initializeDaysSeekBar();
+                    break;
+            }
+        });
+    }
+
+    private void initializeMinutesSeekBar() {
+        unitIndicator = R.string.minutes_choose_label;
+        seekConverterValue = 1;
+        seekBarMin = 5;
+        seekBarIncrement = 5;
+        seekBarValue = seekBarMin;
+        expirationSeekBar.setMax(60 - seekBarMin);
+        expirationSeekBar.setProgress(seekBarValue - seekBarMin);
+        timeTextView.setText(App.getContext().getString(R.string.minutes_choose_label, String.valueOf(seekBarValue)));
+    }
+
+    private void initializeHoursSeekBar() {
+        unitIndicator = R.string.hours_choose_label;
+        seekConverterValue = 60;
+        seekBarMin = 1;
+        seekBarIncrement = 1;
+        seekBarValue = seekBarMin;
+        expirationSeekBar.setMax(24 - seekBarMin);
+        expirationSeekBar.setProgress(seekBarValue - seekBarMin);
+        timeTextView.setText(App.getContext().getString(R.string.hours_choose_label, String.valueOf(seekBarValue)));
+    }
+
+    private void initializeDaysSeekBar() {
+        unitIndicator = R.string.days_choose_label;
+        seekConverterValue = 60 * 24;
+        seekBarMin = 1;
+        seekBarIncrement = 1;
+        seekBarValue = seekBarMin;
+        expirationSeekBar.setMax(30 - seekBarMin);
+        expirationSeekBar.setProgress(seekBarValue - seekBarMin);
+        timeTextView.setText(App.getContext().getString(R.string.days_choose_label, String.valueOf(seekBarValue)));
     }
 
     private void handlePermissionCheck(){
@@ -214,9 +320,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private MarkerOptions geoNoteMarkerOptions(GeoNote geoNote) {
         return new MarkerOptions()
                         .position(new LatLng(geoNote.getLat(), geoNote.getLng()))
-                        .title(geoNote.getOwner())
+                        .title(geoNote.getOwner() + " (Expired in " + getExpirationString(geoNote) + ")")
                         .snippet(geoNote.getNote())
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+    }
+
+    @SuppressLint("NewApi")
+    private String getExpirationString(GeoNote geoNote) {
+
+        String result;
+        long createdTs = geoNote.getCreatedTimestamp();
+        long expirationTs = createdTs + geoNote.getExpirationMinutes() * 60 * 1000;
+        long millisToExpiration = expirationTs - System.currentTimeMillis();
+        long secsToExpiration = millisToExpiration/1000;
+
+        if (secsToExpiration >= 60*60*24)
+            result = secsToExpiration / 60 / 60 / 24 + "[d]";
+        else if(secsToExpiration >= 60*60)
+            result = secsToExpiration / 60 / 60 + "[hr]";
+        else
+            result = secsToExpiration / 60 + "[min]";
+
+        return result;
     }
 
     @SuppressLint("MissingPermission")
@@ -354,6 +479,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onStop() {
         super.onStop();
+        if(tokensPersistant.hasAccessToken())
+            bootstrapRadarService();
     }
 
     @Override

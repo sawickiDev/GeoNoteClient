@@ -6,14 +6,17 @@ public class GeoNote {
     private Double lng;
     private String owner;
     private String error;
+    private Integer expirationMinutes;
+    private Long createdTimestamp;
 
     public GeoNote() {}
 
-    public GeoNote(String note, Double lat, Double lng, String owner) {
+    public GeoNote(String note, Double lat, Double lng, String owner, Integer expirationMinutes) {
         this.note = note;
         this.lat = lat;
         this.lng = lng;
         this.owner = owner;
+        this.expirationMinutes = expirationMinutes;
     }
 
     public String getNote() {
@@ -58,6 +61,22 @@ public class GeoNote {
         this.error = error;
     }
 
+    public Integer getExpirationMinutes() {
+        return expirationMinutes;
+    }
+
+    public void setExpirationMinutes(Integer expirationMinutes) {
+        this.expirationMinutes = expirationMinutes;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
     @Override
     public String toString() {
         return "GeoNote{" +
@@ -66,6 +85,8 @@ public class GeoNote {
                 ", lng=" + lng +
                 ", owner='" + owner + '\'' +
                 ", error='" + error + '\'' +
+                ", expirationMinutes=" + expirationMinutes +
+                ", createdTimestamp=" + createdTimestamp +
                 '}';
     }
 }

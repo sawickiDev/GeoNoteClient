@@ -126,4 +126,11 @@
     <string name="radius_label">%1$sm</string>
     <string name="settings_map_key">map</string>
     <string name="settings_map_title">Map</string>
+    <string name="expiration_time">Expiration time: </string>
+    <string name="minutes_label">min</string>
+    <string name="days_label">days</string>
+    <string name="hours_label">hours</string>
+    <string name="minutes_choose_label">%1$s[min]</string>
+    <string name="hours_choose_label">%1$s[hr]</string>
+    <string name="days_choose_label">%1$s[d]</string>
 </resources>
